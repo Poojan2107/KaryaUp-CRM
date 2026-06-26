@@ -5,9 +5,10 @@ import {
   FormControl, IconButton, Chip, List, ListItem, ListItemText, ListItemIcon,
   ToggleButtonGroup, ToggleButton, Tooltip,
 } from '@mui/material';
-import { Add, Delete, Phone, Email, MeetingRoom, NoteAlt, Task, PictureAsPdf, CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
+import { Add, Delete, Edit, Phone, Email, MeetingRoom, NoteAlt, Task, PictureAsPdf, CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
 import { useApp } from '../context/AppContext';
 import { exportActivitiesPDF } from '../utils/export';
+import { relativeTime } from '../utils/format';
 
 const TYPE_CONFIG = {
   Call: { icon: <Phone fontSize="small" />, color: 'primary' },
@@ -20,21 +21,31 @@ const TYPE_CONFIG = {
 const EMPTY = { type: 'Note', subject: '', description: '', contactId: '', dealId: '' };
 
 export default function Activities() {
-  const { activities, contacts, deals, fetchActivities, fetchContacts, fetchDeals, createActivity, deleteActivity, updateActivity, showSnackbar } = useApp();
+  const { activities, contacts, deals, fetchActivities, fetchContacts, fetchDeals, createActivity, updateActivity, deleteActivity, showSnackbar } = useApp();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
+  const [editingActivity, setEditingActivity] = useState(null);
   const [typeFilter, setTypeFilter] = useState('All');
 
   useEffect(() => { fetchActivities(); fetchContacts(); fetchDeals(); }, []);
 
   const filtered = typeFilter === 'All' ? activities : activities.filter((a) => a.type === typeFilter);
 
-  const handleCreate = async () => {
+  const openCreate = () => { setEditingActivity(null); setForm(EMPTY); setOpen(true); };
+  const openEdit = (a) => { setEditingActivity(a); setForm({ type: a.type, subject: a.subject, description: a.description || '', contactId: a.contactId?._id || '', dealId: a.dealId?._id || '' }); setOpen(true); };
+
+  const handleSave = async () => {
     try {
-      await createActivity({ ...form, contactId: form.contactId || undefined, dealId: form.dealId || undefined });
-      setForm(EMPTY); setOpen(false);
-      showSnackbar('Activity logged');
-    } catch { showSnackbar('Failed to log activity', 'error'); }
+      const payload = { ...form, contactId: form.contactId || undefined, dealId: form.dealId || undefined };
+      if (editingActivity) {
+        await updateActivity(editingActivity._id, payload);
+        showSnackbar('Activity updated');
+      } else {
+        await createActivity(payload);
+        showSnackbar('Activity logged');
+      }
+      setOpen(false);
+    } catch { showSnackbar('Operation failed', 'error'); }
   };
 
   const handleDelete = async (id) => {
@@ -52,17 +63,13 @@ export default function Activities() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h5">
-          <Box component="span" sx={{ color: '#7C3AED' }}>Activity</Box> Log
-        </Typography>
+        <Typography variant="h5"><Box component="span" sx={{ color: '#7C3AED' }}>Activity</Box> Log</Typography>
       </Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>Track calls, emails, meetings and tasks</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{activities.length} total · Track calls, emails, meetings and tasks</Typography>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <ToggleButtonGroup value={typeFilter} exclusive onChange={(_, v) => v && setTypeFilter(v)} size="small">
-          <ToggleButton key="All" value="All" sx={{ borderRadius: 2, px: 2, fontWeight: 500 }}>
-            All
-          </ToggleButton>
+          <ToggleButton key="All" value="All" sx={{ borderRadius: 2, px: 2, fontWeight: 500 }}>All</ToggleButton>
           {Object.entries(TYPE_CONFIG).map(([type, cfg]) => (
             <ToggleButton key={type} value={type} sx={{ borderRadius: 2, px: 2 }}>
               <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>{cfg.icon} {type}</Box>
@@ -70,12 +77,8 @@ export default function Activities() {
           ))}
         </ToggleButtonGroup>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title="Export PDF">
-            <IconButton onClick={() => exportActivitiesPDF(activities)} sx={{ border: '1px solid #ede9fe', borderRadius: 2 }}>
-              <PictureAsPdf />
-            </IconButton>
-          </Tooltip>
-          <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>Log Activity</Button>
+          <Tooltip title="Export PDF"><IconButton onClick={() => exportActivitiesPDF(activities)} sx={{ border: '1px solid #ede9fe', borderRadius: 2 }}><PictureAsPdf /></IconButton></Tooltip>
+          <Button variant="contained" startIcon={<Add />} onClick={openCreate}>Log Activity</Button>
         </Box>
       </Box>
 
@@ -83,16 +86,15 @@ export default function Activities() {
         {filtered.map((a) => {
           const cfg = TYPE_CONFIG[a.type] || { icon: <NoteAlt />, color: 'default' };
           return (
-            <Card key={a._id} sx={{ mb: 1.5, borderRadius: 3, opacity: a.completed ? 0.6 : 1, transition: 'opacity 0.3s', '&:hover': { boxShadow: '0 4px 12px rgba(124,58,237,0.1)' } }}>
+            <Card key={a._id} sx={{ mb: 1.5, borderRadius: 3, opacity: a.completed ? 0.6 : 1, transition: 'all 0.3s', '&:hover': { boxShadow: '0 4px 12px rgba(124,58,237,0.1)' } }}>
               <ListItem
                 secondaryAction={
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
                     <IconButton edge="end" onClick={() => toggleComplete(a)} size="small">
                       {a.completed ? <CheckCircle sx={{ color: '#7C3AED' }} /> : <RadioButtonUnchecked />}
                     </IconButton>
-                    <IconButton edge="end" onClick={() => handleDelete(a._id)} color="error" size="small">
-                      <Delete fontSize="small" />
-                    </IconButton>
+                    <IconButton edge="end" onClick={() => openEdit(a)} size="small"><Edit fontSize="small" sx={{ color: '#7C3AED' }} /></IconButton>
+                    <IconButton edge="end" onClick={() => handleDelete(a._id)} color="error" size="small"><Delete fontSize="small" /></IconButton>
                   </Box>
                 }
               >
@@ -111,8 +113,8 @@ export default function Activities() {
                       {a.description && <Typography variant="body2" color="text.secondary">{a.description}</Typography>}
                       <Typography variant="caption" color="text.secondary">
                         {a.contactId?.name && `With: ${a.contactId.name}`}
-                        {a.dealId?.title && ` | Deal: ${a.dealId.title}`}
-                        {` | ${new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
+                        {a.dealId?.title && ` · Deal: ${a.dealId.title}`}
+                        {` · ${relativeTime(a.createdAt)}`}
                       </Typography>
                     </Box>
                   }
@@ -129,16 +131,14 @@ export default function Activities() {
       </List>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Log Activity</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>{editingActivity ? 'Edit Activity' : 'Log Activity'}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
             <FormControl fullWidth>
               <InputLabel>Activity Type</InputLabel>
               <Select value={form.type} label="Activity Type" onChange={(e) => setForm({ ...form, type: e.target.value })}>
                 {Object.entries(TYPE_CONFIG).map(([t, cfg]) => (
-                  <MenuItem key={t} value={t}>
-                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>{cfg.icon} {t}</Box>
-                  </MenuItem>
+                  <MenuItem key={t} value={t}><Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>{cfg.icon} {t}</Box></MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -162,7 +162,9 @@ export default function Activities() {
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0 }}>
           <Button onClick={() => setOpen(false)} sx={{ color: 'text.secondary' }}>Cancel</Button>
-          <Button variant="contained" onClick={handleCreate} disabled={!form.subject.trim()}>Log Activity</Button>
+          <Button variant="contained" onClick={handleSave} disabled={!form.subject.trim()}>
+            {editingActivity ? 'Update' : 'Log Activity'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
