@@ -1,13 +1,19 @@
-# CRM Demo
+# KaryaUP CRM Demo
 
-A full-stack CRM demo built with the MERN stack (MongoDB, Express, React, Node.js).
+A full-stack CRM built with the MERN stack. Built and deployed in under 1 hour.
+
+**Live**: https://crm-demo-kayaup.vercel.app
 
 ## Features
 
-- **Dashboard** — Summary cards (contacts, active deals, pipeline value, closed won) + bar charts
-- **Contacts** — Table with search, create/edit modal, delete
-- **Deals** — Kanban board with drag & drop across pipeline stages
-- **Activities** — Log calls, emails, meetings, notes, and tasks with contact association
+- **Dashboard** — KPI cards, pipeline analytics (win rate, avg deal, conversion), bar/pie charts
+- **Contacts** — Table with search, pagination, CRUD, enrichment (deal count, total value)
+- **Deals** — Drag & drop Kanban (6 stages), inline value editing, column totals, detail page
+- **Activities** — Type filter, completion toggle, edit, relative timestamps
+- **Contact/Deal Detail** — Profile cards with linked activities and deals
+- **Export** — PDF (contacts, deals, activities) + CSV (contacts)
+- **Dark Mode** — Theme toggle in header
+- **Undo Delete** — Snackbar with undo for contacts and deals
 
 ## Tech Stack
 
@@ -15,77 +21,21 @@ A full-stack CRM demo built with the MERN stack (MongoDB, Express, React, Node.j
 |---|---|
 | Frontend | React, Material UI, Recharts, @dnd-kit |
 | Backend | Express.js, Mongoose |
-| Database | MongoDB |
+| Database | MongoDB Atlas |
+| Deployment | Vercel (serverless) |
 
-## Setup
-
-### Prerequisites
-
-- Node.js 18+
-- MongoDB running locally on port 27017 (or set `MONGO_URI` env var)
-
-### Install & Run
+## Quick Start
 
 ```bash
-# Install root + server + client dependencies
 npm run install:all
-
-# Seed sample data
-npm run seed
-
-# Start both server and client
+MONGO_URI="<your-mongo-uri>" npm run seed
 npm run dev
 ```
 
-- Server runs on `http://localhost:5000`
-- Client runs on `http://localhost:3000`
-
-### Environment Variables
-
-| Variable | Default |
-|---|---|
-| `PORT` | `5000` |
-| `MONGO_URI` | `mongodb://localhost:27017/crm-demo` |
-
-## Project Structure
+## Structure
 
 ```
-crm-demo/
-├── server/
-│   ├── models/       (Contact, Deal, Activity)
-│   ├── routes/       (REST API endpoints)
-│   ├── seed.js       (sample data seeder)
-│   └── index.js      (Express entry point)
-├── client/
-│   ├── src/
-│   │   ├── context/  (AppContext with API calls)
-│   │   ├── components/ (Layout)
-│   │   ├── pages/    (Dashboard, Contacts, Deals, Activities)
-│   │   └── App.jsx
-│   ├── index.html
-│   └── vite.config.js
-└── package.json
+api/              Vercel serverless entry
+server/           Express app (models, routes, seed)
+client/           React app (pages, components, context)
 ```
-
-## API Endpoints
-
-### Contacts
-- `GET /api/contacts?search=` — List contacts (optional search)
-- `POST /api/contacts` — Create contact
-- `PUT /api/contacts/:id` — Update contact
-- `DELETE /api/contacts/:id` — Delete contact
-
-### Deals
-- `GET /api/deals` — List all deals
-- `POST /api/deals` — Create deal
-- `PUT /api/deals/:id` — Update deal
-- `DELETE /api/deals/:id` — Delete deal
-
-### Activities
-- `GET /api/activities?contactId=` — List activities (optional filter by contact)
-- `POST /api/activities` — Create activity
-- `PUT /api/activities/:id` — Update activity
-- `DELETE /api/activities/:id` — Delete activity
-
-### Misc
-- `GET /api/stages` — Returns pipeline stage names
