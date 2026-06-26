@@ -3,17 +3,18 @@ import {
   Box, Button, TextField, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle,
   DialogContent, DialogActions, Typography, Chip, Menu, MenuItem,
-  TablePagination, InputAdornment, Tooltip,
+  TablePagination, InputAdornment, Tooltip, Avatar,
 } from '@mui/material';
 import { Edit, Delete, Add, MoreVert, PictureAsPdf, Download, Search as SearchIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { exportContactsPDF, exportContactsCSV } from '../utils/export';
+import { relativeTime } from '../utils/format';
 
 const EMPTY = { name: '', email: '', phone: '', company: '', role: '', notes: '' };
 
 export default function Contacts() {
-  const { contacts, fetchContacts, createContact, updateContact, deleteContact, showSnackbar } = useApp();
+  const { contacts, deals, fetchContacts, createContact, updateContact, deleteContact, showSnackbar } = useApp();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
@@ -25,12 +26,7 @@ export default function Contacts() {
 
   useEffect(() => { fetchContacts(); }, []);
 
-  const handleSearch = (val) => {
-    setSearch(val);
-    setPage(0);
-    fetchContacts(val);
-  };
-
+  const handleSearch = (val) => { setSearch(val); setPage(0); fetchContacts(val); };
   const openCreate = () => { setEditing(null); setForm(EMPTY); setOpen(true); };
   const openEdit = (c) => { setEditing(c); setForm({ ...c }); setOpen(true); };
 
@@ -44,19 +40,20 @@ export default function Contacts() {
 
   const handleDelete = async (id, name) => {
     if (window.confirm(`Delete "${name}"?`)) {
-      try { await deleteContact(id); showSnackbar('Contact deleted'); }
+      try { await deleteContact(id); }
       catch { showSnackbar('Delete failed', 'error'); }
     }
   };
 
+  const getDealCount = (contactId) => deals.filter((d) => String(d.contactId) === contactId).length;
+  const getDealValue = (contactId) => deals.filter((d) => String(d.contactId) === contactId).reduce((s, d) => s + (d.value || 0), 0);
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h5">
-          <Box component="span" sx={{ color: '#7C3AED' }}>Contact</Box> Management
-        </Typography>
+        <Typography variant="h5"><Box component="span" sx={{ color: '#7C3AED' }}>Contact</Box> Management</Typography>
       </Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>Manage your leads and relationships</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>{contacts.length} contacts · Manage leads and relationships</Typography>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <TextField size="small" placeholder="Search contacts..." value={search}
@@ -64,13 +61,11 @@ export default function Contacts() {
           InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#7C3AED' }} /></InputAdornment> }} />
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Tooltip title="Export">
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ border: '1px solid #ede9fe', borderRadius: 2 }}>
-              <MoreVert />
-            </IconButton>
+            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ border: '1px solid #ede9fe', borderRadius: 2 }}><MoreVert /></IconButton>
           </Tooltip>
           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-            <MenuItem onClick={() => { setAnchorEl(null); exportContactsPDF(contacts); }}><PictureAsPdf sx={{ mr: 1, color: '#7C3AED' }} />Export PDF</MenuItem>
-            <MenuItem onClick={() => { setAnchorEl(null); exportContactsCSV(contacts); }}><Download sx={{ mr: 1, color: '#7C3AED' }} />Export CSV</MenuItem>
+            <MenuItem onClick={() => { setAnchorEl(null); exportContactsPDF(contacts); }}><PictureAsPdf sx={{ mr: 1, color: '#7C3AED' }} />PDF</MenuItem>
+            <MenuItem onClick={() => { setAnchorEl(null); exportContactsCSV(contacts); }}><Download sx={{ mr: 1, color: '#7C3AED' }} />CSV</MenuItem>
           </Menu>
           <Button variant="contained" startIcon={<Add />} onClick={openCreate}>Add Contact</Button>
         </Box>
@@ -82,28 +77,51 @@ export default function Contacts() {
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Phone</TableCell>
+                <TableCell>Contact</TableCell>
                 <TableCell>Company</TableCell>
-                <TableCell>Role</TableCell>
+                <TableCell align="center">Deals</TableCell>
+                <TableCell>Value</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {contacts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((c) => (
-                <TableRow key={c._id} hover sx={{ cursor: 'pointer', '&:hover': { bgcolor: '#F3F0FF' } }}
-                  onClick={() => navigate(`/contacts/${c._id}`)}>
-                  <TableCell><Typography fontWeight={500}>{c.name}</Typography></TableCell>
-                  <TableCell>{c.email && <Chip label={c.email} size="small" variant="outlined" sx={{ borderColor: '#ede9fe' }} />}</TableCell>
-                  <TableCell>{c.phone || '-'}</TableCell>
-                  <TableCell>{c.company || '-'}</TableCell>
-                  <TableCell>{c.role || '-'}</TableCell>
-                  <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                    <IconButton size="small" onClick={() => openEdit(c)} sx={{ color: '#7C3AED' }}><Edit fontSize="small" /></IconButton>
-                    <IconButton size="small" onClick={() => handleDelete(c._id, c.name)} color="error"><Delete fontSize="small" /></IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {contacts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((c) => {
+                const dealCount = getDealCount(c._id);
+                const dealValue = getDealValue(c._id);
+                return (
+                  <TableRow key={c._id} hover sx={{ cursor: 'pointer', '&:hover': { bgcolor: '#F3F0FF' } }}
+                    onClick={() => navigate(`/contacts/${c._id}`)}>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: '#7C3AED', fontSize: 14, fontWeight: 700 }}>
+                          {c.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight={600}>{c.name}</Typography>
+                          <Typography variant="caption" color="text.secondary">{c.role || '—'}</Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      {c.email && <Typography variant="caption" display="block">{c.email}</Typography>}
+                      {c.phone && <Typography variant="caption" color="text.secondary">{c.phone}</Typography>}
+                    </TableCell>
+                    <TableCell><Typography variant="body2">{c.company || '—'}</Typography></TableCell>
+                    <TableCell align="center">
+                      <Chip label={dealCount} size="small" color={dealCount > 0 ? 'primary' : 'default'} variant={dealCount > 0 ? 'filled' : 'outlined'} sx={{ minWidth: 32 }} />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={dealValue > 0 ? 600 : 400} sx={{ color: dealValue > 0 ? '#7C3AED' : 'text.secondary' }}>
+                        {dealValue > 0 ? `$${dealValue.toLocaleString()}` : '—'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                      <IconButton size="small" onClick={() => openEdit(c)} sx={{ color: '#7C3AED' }}><Edit fontSize="small" /></IconButton>
+                      <IconButton size="small" onClick={() => handleDelete(c._id, c.name)} color="error"><Delete fontSize="small" /></IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
               {contacts.length === 0 && (
                 <TableRow><TableCell colSpan={6} align="center" sx={{ py: 5 }}>
                   <Typography color="text.secondary">No contacts yet. Click "Add Contact" to get started.</Typography>

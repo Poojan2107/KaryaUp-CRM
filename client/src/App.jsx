@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Contacts from './pages/Contacts';
 import ContactDetail from './pages/ContactDetail';
 import Deals from './pages/Deals';
+import DealDetail from './pages/DealDetail';
 import Activities from './pages/Activities';
 import { AppProvider, useApp } from './context/AppContext';
 
@@ -90,6 +91,7 @@ function ThemedApp() {
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/contacts/:id" element={<ContactDetail />} />
           <Route path="/deals" element={<Deals />} />
+          <Route path="/deals/:id" element={<DealDetail />} />
           <Route path="/activities" element={<Activities />} />
         </Routes>
       </Layout>

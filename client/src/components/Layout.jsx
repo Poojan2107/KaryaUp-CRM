@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  AppBar, Toolbar, Typography, IconButton, Snackbar, Alert, Tooltip,
+  AppBar, Toolbar, Typography, IconButton, Snackbar, Alert, Tooltip, Button,
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
@@ -89,10 +89,17 @@ export default function Layout({ children }) {
         <Toolbar />
         {children}
       </Box>
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={closeSnackbar}
+      <Snackbar open={snackbar.open} autoHideDuration={5000} onClose={closeSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
         <Alert severity={snackbar.severity} onClose={closeSnackbar}
-          variant="filled" sx={{ width: '100%', borderRadius: 2 }}>{snackbar.message}</Alert>
+          variant="filled" sx={{ width: '100%', borderRadius: 2 }}
+          action={snackbar.action ? (
+            <Button size="small" sx={{ color: '#fff', fontWeight: 700 }} onClick={() => { snackbar.action.handler(); closeSnackbar(); }}>
+              {snackbar.action.label}
+            </Button>
+          ) : null}>
+          {snackbar.message}
+        </Alert>
       </Snackbar>
     </Box>
   );

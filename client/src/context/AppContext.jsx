@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useRef } from 'react';
 
 const API = '/api';
 const AppCtx = createContext(null);
@@ -18,10 +18,11 @@ export function AppProvider({ children }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success', action: null });
+  const undoRef = useRef(null);
 
-  const showSnackbar = useCallback((message, severity = 'success') => {
-    setSnackbar({ open: true, message, severity });
+  const showSnackbar = useCallback((message, severity = 'success', action = null) => {
+    setSnackbar({ open: true, message, severity, action });
   }, []);
 
   const closeSnackbar = useCallback(() => {
@@ -50,14 +51,34 @@ export function AppProvider({ children }) {
   }, []);
 
   const deleteContact = useCallback(async (id) => {
-    await api(`/contacts/${id}`, { method: 'DELETE' });
+    const deleted = contacts.find((c) => c._id === id);
     setContacts((prev) => prev.filter((c) => c._id !== id));
-  }, []);
+    try {
+      await api(`/contacts/${id}`, { method: 'DELETE' });
+      showSnackbar('Contact deleted', 'success', {
+        label: 'Undo',
+        handler: async () => {
+          if (deleted) {
+            await createContact(deleted);
+            showSnackbar('Contact restored');
+          }
+        },
+      });
+    } catch {
+      setContacts((prev) => [...prev, deleted].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      showSnackbar('Delete failed', 'error');
+    }
+  }, [contacts, createContact, showSnackbar]);
 
-  const fetchDeals = useCallback(async () => {
-    const data = await api('/deals');
+  const fetchDeals = useCallback(async (search) => {
+    const q = search ? `?search=${encodeURIComponent(search)}` : '';
+    const data = await api(`/deals${q}`);
     setDeals(data);
     return data;
+  }, []);
+
+  const fetchDealActivities = useCallback(async (dealId) => {
+    return api(`/deals/${dealId}/activities`);
   }, []);
 
   const createDeal = useCallback(async (data) => {
@@ -73,9 +94,24 @@ export function AppProvider({ children }) {
   }, []);
 
   const deleteDeal = useCallback(async (id) => {
-    await api(`/deals/${id}`, { method: 'DELETE' });
+    const deleted = deals.find((d) => d._id === id);
     setDeals((prev) => prev.filter((d) => d._id !== id));
-  }, []);
+    try {
+      await api(`/deals/${id}`, { method: 'DELETE' });
+      showSnackbar('Deal deleted', 'success', {
+        label: 'Undo',
+        handler: async () => {
+          if (deleted) {
+            const restored = await createDeal(deleted);
+            showSnackbar('Deal restored');
+          }
+        },
+      });
+    } catch {
+      setDeals((prev) => [...prev, deleted].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)));
+      showSnackbar('Delete failed', 'error');
+    }
+  }, [deals, createDeal, showSnackbar]);
 
   const fetchActivities = useCallback(async (contactId) => {
     const q = contactId ? `?contactId=${contactId}` : '';
@@ -106,7 +142,7 @@ export function AppProvider({ children }) {
       contacts, deals, activities, loading, setLoading,
       darkMode, toggleDarkMode, snackbar, showSnackbar, closeSnackbar,
       fetchContacts, createContact, updateContact, deleteContact,
-      fetchDeals, createDeal, updateDeal, deleteDeal,
+      fetchDeals, fetchDealActivities, createDeal, updateDeal, deleteDeal,
       fetchActivities, createActivity, updateActivity, deleteActivity,
     }}>
       {children}
