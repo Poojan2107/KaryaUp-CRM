@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
@@ -73,6 +73,7 @@ function ThemedApp() {
 
   return (
     <ThemeProvider theme={theme}>
+      <CssBaseline />
       {isLanding ? AppRoutes : <Layout>{AppRoutes}</Layout>}
     </ThemeProvider>
   );

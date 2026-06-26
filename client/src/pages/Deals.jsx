@@ -4,7 +4,7 @@ import {
   DialogContent, DialogActions, TextField, Select, MenuItem, InputLabel,
   FormControl, IconButton, Tooltip, Chip, Grid, InputAdornment,
 } from '@mui/material';
-import { Add, Edit, PictureAsPdf, Search as SearchIcon, OpenInNew } from '@mui/icons-material';
+import { Add, Edit, PictureAsPdf, Search as SearchIcon, OpenInNew, Close } from '@mui/icons-material';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -199,7 +199,10 @@ export default function Deals() {
       </DndContext>
 
       <Dialog open={Boolean(valueEdit)} onClose={() => setValueEdit(null)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Edit Deal Value</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Edit Deal Value
+          <IconButton size="small" onClick={() => setValueEdit(null)}><Close fontSize="small" /></IconButton>
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 1 }}>
             <TextField label="Value ($)" type="number" fullWidth autoFocus value={valueInput}
@@ -214,7 +217,10 @@ export default function Deals() {
       </Dialog>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>{editingDeal ? 'Edit Deal' : 'New Deal'}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {editingDeal ? 'Edit Deal' : 'New Deal'}
+          <IconButton size="small" onClick={() => setOpen(false)}><Close fontSize="small" /></IconButton>
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
             <TextField label="Deal Title" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />

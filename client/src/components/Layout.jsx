@@ -3,6 +3,7 @@ import {
   Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
   AppBar, Toolbar, Typography, IconButton, Snackbar, Alert, Tooltip, Button,
 } from '@mui/material';
+import HomeIcon from '@mui/icons-material/Home';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
@@ -14,6 +15,7 @@ import { useApp } from '../context/AppContext';
 const DRAWER_WIDTH = 260;
 
 const NAV = [
+  { label: 'Home', path: '/', icon: <HomeIcon /> },
   { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
   { label: 'Contacts', path: '/contacts', icon: <PeopleIcon /> },
   { label: 'Deals', path: '/deals', icon: <AttachMoneyIcon /> },
@@ -49,7 +51,7 @@ export default function Layout({ children }) {
         <Toolbar />
         <List sx={{ px: 1.5 }}>
           {NAV.map((item) => {
-            const selected = location.pathname === item.path;
+            const selected = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             return (
               <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
@@ -85,6 +87,8 @@ export default function Layout({ children }) {
         flexGrow: 1, p: { xs: 2, md: 4 },
         minHeight: '100vh',
         bgcolor: '#F7F5FF',
+        backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(124,58,237,0.04) 1px, transparent 0)',
+        backgroundSize: '24px 24px',
       }}>
         <Toolbar />
         {children}

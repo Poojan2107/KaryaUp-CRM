@@ -5,7 +5,7 @@ import {
   FormControl, IconButton, Chip, List, ListItem, ListItemText, ListItemIcon,
   ToggleButtonGroup, ToggleButton, Tooltip,
 } from '@mui/material';
-import { Add, Delete, Edit, Phone, Email, MeetingRoom, NoteAlt, Task, PictureAsPdf, CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
+import { Add, Delete, Edit, Phone, Email, MeetingRoom, NoteAlt, Task, PictureAsPdf, CheckCircle, RadioButtonUnchecked, Close } from '@mui/icons-material';
 import { useApp } from '../context/AppContext';
 import { exportActivitiesPDF } from '../utils/export';
 import { relativeTime } from '../utils/format';
@@ -131,7 +131,10 @@ export default function Activities() {
       </List>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>{editingActivity ? 'Edit Activity' : 'Log Activity'}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {editingActivity ? 'Edit Activity' : 'Log Activity'}
+          <IconButton size="small" onClick={() => setOpen(false)}><Close fontSize="small" /></IconButton>
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
             <FormControl fullWidth>
