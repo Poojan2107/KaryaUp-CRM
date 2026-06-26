@@ -5,7 +5,7 @@ import {
   DialogContent, DialogActions, Typography, Chip, Menu, MenuItem,
   TablePagination, InputAdornment, Tooltip, Avatar,
 } from '@mui/material';
-import { Edit, Delete, Add, MoreVert, PictureAsPdf, Download, Search as SearchIcon } from '@mui/icons-material';
+import { Edit, Delete, Add, MoreVert, PictureAsPdf, Download, Search as SearchIcon, Close } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { exportContactsPDF, exportContactsCSV } from '../utils/export';
@@ -136,7 +136,10 @@ export default function Contacts() {
       </Paper>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>{editing ? 'Edit Contact' : 'New Contact'}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {editing ? 'Edit Contact' : 'New Contact'}
+          <IconButton size="small" onClick={() => setOpen(false)}><Close fontSize="small" /></IconButton>
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 1 }}>
             <TextField label="Full Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
