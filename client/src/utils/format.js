@@ -16,7 +16,7 @@ export function relativeTime(date) {
 
 export function formatCurrency(value) {
   if (!value && value !== 0) return '-';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 }
 
 export function formatDate(date) {
